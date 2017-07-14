@@ -39,6 +39,7 @@ def do_check():
 
 
 def main():
+    print('heroku_start.py - main()')
     while True:
         do_check()
         time.sleep(INTERVAL)
