@@ -3,17 +3,24 @@ from src.Friend import Friend
 from src.User import User
 from src.Messaging import Messaging
 
-auth = Auth('YOUR EMAIL', 'YOUR PASSWORD')
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+auth = Auth('poo', 'wumbo')
 tokens = auth.get_tokens()
 
 friend = Friend(tokens)
-friend_list = friend.my_friends()
+online_friends = friend.my_friends(filter='online')['profiles']
+print('%s friends online' % len(online_friends))
 
-friend_string = ''
-if bool(friend_list):
-    for key, value in friend_list.items():
-        friend_string += key+' is playing '+value+"\n"
-else:
-    friend_string = 'No friends online'
-
-print(friend_string)
+for profile in online_friends:
+    friend = profile['onlineId']
+    status = profile['primaryOnlineStatus']
+    game = profile['presences'][0].get('titleName', '<nothing>')
+    platform = profile['presences'][0].get('platform', '<unknown>')
+    print('[{platform}] {friend} is {status}, playing {game}'.format(
+        platform=platform,
+        friend=friend,
+        status=status,
+        game=game,
+    ))

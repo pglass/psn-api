@@ -1,13 +1,9 @@
-import simplejson
-import json
-import urllib.request
-import urllib.parse
-import os
+from .client import do_request
+
 
 class Auth:
 
     oauth = None
-    last_error = None
     npsso = None
     grant_code = None
     refresh_token = None
@@ -65,33 +61,29 @@ class Auth:
         self.login_request['password'] = password
         self.two_factor_auth_request['ticket_uuid'] = ticket
         self.two_factor_auth_request['code'] = code
-        if (self.GrabNPSSO() is False or self.GrabCode() is False or self.GrabOAuth() is False):
+        if (not self.GrabNPSSO() or
+                not self.GrabCode() or
+                not self.GrabOAuth()):
             print('Error')
 
 
     def GrabNPSSO(self):
         if self.two_factor_auth_request['ticket_uuid'] and self.two_factor_auth_request['code']:
-            data = urllib.parse.urlencode(self.two_factor_auth_request).encode('utf-8')
-            request = urllib.request.Request(self.SSO_URL, data = data)
-            response = urllib.request.urlopen(request)
-            data = json.loads(response.read().decode('utf-8'))
+            # not used??
+            resp = do_request('POST', self.SSO_URL, data=self.two_factor_auth_request)
+            data = resp.json()
         else:
-            data = urllib.parse.urlencode(self.login_request).encode('utf-8')
-            request = urllib.request.Request(self.SSO_URL, data = data)
-            response = urllib.request.urlopen(request)
-            data = json.loads(response.read().decode('utf-8'))
-            if hasattr(data, 'error'):
+            resp = do_request('POST', self.SSO_URL, data=self.login_request)
+            data = resp.json()
+            if 'error' in data:
+                print('Error during request to %s: %s' % (self.SSO_URL, data))
                 return False
-            if hasattr(data, 'ticket_uuid'):
-                error = {
-                            'error': '2fa_code_required',
-                            'error_description': '2FA Code Required',
-                            'ticket': data['ticket_uuid']
-                }
-                self.last_error = json.dumps(error)
+            if 'ticket_uuid' in data:
+                print('Error - 2FA code required (ticket_uuid = %s)'
+                      % data['ticket_uuid'])
                 return False
-            self.npsso = data['npsso']
-            return True
+        self.npsso = data['npsso']
+        return True
 
     def find_between(self, s, first, last ):
         try:
@@ -102,19 +94,12 @@ class Auth:
             return ""
 
     def GrabCode(self):
-        data = urllib.parse.urlencode(self.code_request)
-        url = self.CODE_URL+'?'+ data
-        response = os.popen('curl -s -I -H \'Cookie: npsso='+self.npsso+'\' -X GET \''+url+'\' | grep -Fi X-NP-GRANT-CODE').readline()
+        resp = do_request('GET', self.CODE_URL, params=self.code_request,
+                          headers={'Cookie': 'npsso=%s' % self.npsso})
+        self.grant_code = resp.headers.get('X-NP-GRANT-CODE')
 
-        self.grant_code = self.find_between(response, 'X-NP-GRANT-CODE: ', '\n')
-
-        if (self.grant_code is ''):
-            error = {
-                'error': 'invalid_np_grant',
-                'error_description': 'Failed to obtain X-NP-GRANT-CODE',
-                'error_code': 20
-            }
-            self.last_error = json.dumps(error)
+        if not self.grant_code:
+            print('Error - Failed to obtain X-NP-GRANT-CODE')
             return False
 
         return True
@@ -122,18 +107,15 @@ class Auth:
     def GrabOAuth(self):
         self.oauth_request['code'] = self.grant_code
 
-        data = urllib.parse.urlencode(self.oauth_request).encode('utf-8')
-        request = urllib.request.Request(self.OAUTH_URL, data = data)
-        response = urllib.request.urlopen(request)
-        data = json.loads(response.read().decode('utf-8'))
+        resp = do_request('POST', self.OAUTH_URL, data=self.oauth_request)
+        data = resp.json()
 
-        if hasattr(data, 'error'):
-            self.last_error = data['body']
+        if 'error' in data:
+            print('Error - Failed to grab oauth')
             return False
 
         self.oauth = data['access_token']
         self.refresh_token = data['refresh_token']
-
         return True
 
     def get_tokens(self):
@@ -142,5 +124,9 @@ class Auth:
             "refresh": self.refresh_token,
             "npsso": self.npsso
         }
+
+        if not all(tokens.values()):
+            raise Exception("Failed to get tokens for user %r: %s"
+                            % (self.login_request['username'], tokens))
 
         return tokens

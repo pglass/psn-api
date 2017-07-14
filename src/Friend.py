@@ -1,5 +1,4 @@
-import simplejson
-import json
+from .client import do_request
 import requests
 from src.User import User
 
@@ -10,27 +9,42 @@ class Friend:
 
     USERS_URL = 'https://us-prof.np.community.playstation.net/userProfile/v1/users/'
 
+    FIELDS = (
+        "onlineId",
+        # "avatarUrls",
+        # "following",
+        "friendRelation",
+        # "isOfficiallyVerified",
+        "personalDetail(@default,profilePictureUrls)",
+        # "personalDetailSharing",
+        # "plus",
+        "presences(@titleInfo,hasBroadcastData,lastOnlineDate)",
+        "primaryOnlineStatus",
+        # "trophySummary(@default)",
+    )
+
     def __init__(self, tokens):
         self.oauth = tokens['oauth']
         self.refresh_token = tokens['refresh']
 
-    def my_friends(self, filter = 'online', limit = 36):
-        header = {
-            'Authorization': 'Bearer '+self.oauth
+    def my_friends(self, filter=None, limit=10, fields=FIELDS):
+        headers = {
+            'Authorization': 'Bearer %s' % self.oauth
         }
+        url = self.USERS_URL + 'me/friends/profiles2'
+        params = {
+            "fields": ",".join(fields),
+            "sort": "name-onlineId",
+            #"avatarSizes": "m",
+            #"profilePictureSizes": "m",
+            "offset": "0",
+            "limit": str(limit),
+        }
+        if filter:
+            params['userFilter'] = filter
 
-        endpoint = 'me/friends/profiles2?fields=onlineId,avatarUrls,following,friendRelation,isOfficiallyVerified,personalDetail(@default,profilePictureUrls),personalDetailSharing,plus,presences(@titleInfo,hasBroadcastData,lastOnlineDate),primaryOnlineStatus,trophySummary(@default)&sort=name-onlineId&userFilter='+filter+'&avatarSizes=m&profilePictureSizes=m&offset=0&limit='+str(limit)
-
-        response = requests.get(self.USERS_URL+endpoint, headers=header).text
-        data = json.loads(response)
-
-        friends = {}
-        for i in data['profiles']:
-            if i['presences'][0].get('titleName'):
-                friends[i['onlineId']] = i['presences'][0]['titleName']
-            else:
-                friends[i['onlineId']] = ''
-        return friends
+        resp = do_request('GET', url, headers=headers, params=params)
+        return resp.json()
 
     def send_friend_request(self, psn_id, request_message = ''):
         tokens = {
