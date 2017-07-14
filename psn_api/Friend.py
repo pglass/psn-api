@@ -1,6 +1,7 @@
-from .client import do_request
 import requests
-from src.User import User
+
+from psn_api.User import User
+from psn_api.client import do_request
 
 class Friend:
 

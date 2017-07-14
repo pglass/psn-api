@@ -2,7 +2,8 @@ import simplejson
 import json
 import requests
 import os.path
-from src.User import User
+
+from psn_api.User import User
 
 class Messaging:
 
