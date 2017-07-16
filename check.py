@@ -26,10 +26,10 @@ def should_notify_user(profile):
     game = profile['presences'][0].get('titleName')
     return game and user in NOTIFY_USERS
 
-def do_check():
-    auth = Auth(PSN_USERNAME, PSN_PASSWORD)
-    tokens = auth.get_tokens()
+def get_auth():
+     return Auth(PSN_USERNAME, PSN_PASSWORD)
 
+def do_check(tokens):
     friend = Friend(tokens)
     online_friends = friend.my_friends(filter='online')['profiles']
 
@@ -65,4 +65,4 @@ def do_check():
             print('[%s] Sent slack msg' % resp.status_code)
 
 if __name__ == '__main__':
-    do_check()
+    do_check(get_auth().get_tokens())

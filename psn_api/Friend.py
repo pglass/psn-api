@@ -61,7 +61,7 @@ class Friend:
         }
 
         if request_message == '':
-            request_message= 'Hola, soy '+onlineId+'. ¿Quieres ser mi amigo?'
+            request_message= 'Hola, soy '+onlineId+'. Quieres ser mi amigo?'
 
         message = {
             "requestMessage": request_message

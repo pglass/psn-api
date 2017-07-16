@@ -1,7 +1,7 @@
 import simplejson
 import json
-import urllib.request
-import urllib.parse
+#import urllib.request
+#import urllib.parse
 import os
 
 class User:

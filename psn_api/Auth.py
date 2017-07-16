@@ -118,6 +118,31 @@ class Auth:
         self.refresh_token = data['refresh_token']
         return True
 
+    def refreshTokens(self):
+        print('Refreshing token')
+        if self.refresh_token:
+            self.refresh_oauth_request['refresh_token'] = self.refresh_token
+
+            resp = do_request('POST', self.OAUTH_URL,
+                              data=self.refresh_oauth_request)
+
+            if not resp.ok:
+                print('Error - Failed to refresh tokens')
+                return False
+
+            data = resp.json()
+            self.oauth = data['access_token']
+            self.refresh_token = data['refresh_token']
+        else:
+            print('No refresh token found - logging in again')
+            if (not self.GrabNPSSO() or
+                    not self.GrabCode() or
+                    not self.GrabOAuth()):
+                print('Error - failed to login')
+                return False
+        return True
+
+
     def get_tokens(self):
         tokens = {
             "oauth": self.oauth,
