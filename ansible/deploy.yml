@@ -1,0 +1,8 @@
+- hosts: localhost
+  connection: local
+  roles:
+    - deploy
+
+- hosts: psn_servers
+  roles:
+    - configure

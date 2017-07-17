@@ -1,0 +1,32 @@
+- name: Setup Public Key
+  local_action:
+    module: rax_keypair
+    name: "{{ keypair_name }}"
+    public_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+    region: "{{ rax_region }}"
+    state: present
+
+- name: Create Server
+  local_action:
+    module: rax
+    name: "{{ server_name }}"
+    flavor: "{{ rax_flavor }}"
+    image: "{{ rax_image }}"
+    region: "{{ rax_region }}"
+    state: present
+    count: 1
+    group: "psn_servers"
+    exact_count: yes
+    wait: yes
+    wait_timeout: 600
+    key_name: "{{ keypair_name }}"
+  register: server
+- debug: var=server
+
+- name: Create server host group
+  local_action:
+    module: add_host
+    hostname: "{{ server.instances[0].name }}"
+    ansible_ssh_host: "{{ server.instances[0].rax_accessipv4 }}"
+    ansible_ssh_user: root
+    groupname: psn_servers

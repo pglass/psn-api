@@ -1,11 +1,15 @@
 from setuptools import setup
 
 setup(
-    name='psn_api',
+    name='psn',
     version='0.0.1',
-    packages=['psn_api'],
+    packages=['psn'],
     install_requires=[
         'requests',
-        'simplejson',
     ],
+    entry_points={
+        'console_scripts': [
+            'psn-notifier = psn.cli:main',
+        ],
+    },
 )

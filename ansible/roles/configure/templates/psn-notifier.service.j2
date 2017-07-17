@@ -1,0 +1,11 @@
+[Unit]
+Description=PSN Notifier
+
+[Service]
+EnvironmentFile=-/etc/sysconfig/psn-notifier-config
+WorkingDirectory={{ git_dest_dir }}
+ExecStart={{ git_dest_dir }}/.venv/psn-notifier
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+keypair_name:               psn-notifier-ansible
+
+# 512mb standard, Ubuntu 16.04
+rax_flavor:                 2
+rax_image:                  19316b0e-ea97-4506-aec8-85beaed4ee94
+rax_region:                 DFW
+
+server_name:                psn-notifier
+
+git_repo_url:               https://github.com/pglass/psn-api.git
+git_dest_dir:               /root/psn
+git_version:                master
+
+public_key:                 ~/.ssh/id_rsa.pub
