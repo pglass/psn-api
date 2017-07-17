@@ -36,7 +36,8 @@ class Auth(object):
         payload = payloads.get_refresh_payload(self.refresh_token)
         resp = do_request('POST', config.OAUTH_URL, data=payload)
         try:
-            return resp.json()['access_token'], resp.json()['refresh_token']
+            self.access_token = resp.json()['access_token']
+            self.refresh_token = resp.json()['refresh_token']
         except:
             raise AuthError("Failed refresh oauth tokens")
 
