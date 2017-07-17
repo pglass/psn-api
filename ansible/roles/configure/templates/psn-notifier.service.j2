@@ -2,9 +2,9 @@
 Description=PSN Notifier
 
 [Service]
-EnvironmentFile=-/etc/sysconfig/psn-notifier-config
+EnvironmentFile=-/etc/psn-notifier-config
 WorkingDirectory={{ git_dest_dir }}
-ExecStart={{ git_dest_dir }}/.venv/psn-notifier
+ExecStart={{ git_dest_dir }}/.venv/bin/psn-notifier
 Restart=always
 
 [Install]

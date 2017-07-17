@@ -14,11 +14,11 @@ SLACK_WEBHOOK_URL = os.environ.get('SLACK_WEBHOOK_URL')
 NOTIFY_USERS = os.environ.get('NOTIFY_USERS')
 
 # How often to query the friends list
-PSN_CHECK_INTERVAL = int(os.environ.get('PSN_CHECK_INTERVAL', 600))
+PSN_CHECK_INTERVAL = int(os.environ.get('PSN_CHECK_INTERVAL') or 600)
 # How often to refresh tokens
-TOKEN_REFRESH_INTERVAL = os.environ.get('TOKEN_REFRESH_INTERVAL', 3500)
+TOKEN_REFRESH_INTERVAL = int(os.environ.get('TOKEN_REFRESH_INTERVAL') or 3500)
 # How often to wake up and check for work
-WAKEUP_INTERVAL = os.environ.get('WAKEUP_INTERVAL', 60)
+WAKEUP_INTERVAL = int(os.environ.get('WAKEUP_INTERVAL') or 60)
 
 def current_time():
     return datetime.utcnow().isoformat()
