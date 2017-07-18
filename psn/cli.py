@@ -42,6 +42,21 @@ def send_slack_msg(msg):
     else:
         print('[%s] Sent slack msg' % resp.status_code)
 
+
+def format_friend_status_message(profile):
+    friend = profile['onlineId']
+    status = profile['primaryOnlineStatus']
+    game = profile['presences'][0].get('titleName', '<nothing>')
+    platform = profile['presences'][0].get('platform', '<unknown>')
+
+    return u'[{platform}] {friend} is {status}, playing {game}'.format(
+        platform=platform,
+        friend=friend,
+        status=status,
+        game=game,
+    )
+
+
 def do_check(psn):
     online_friends = psn.my_friends(filter='online')['profiles']
 
@@ -50,17 +65,7 @@ def do_check(psn):
 
     slack_msg = ''
     for profile in online_friends:
-        friend = profile['onlineId']
-        status = profile['primaryOnlineStatus']
-        game = profile['presences'][0].get('titleName', '<nothing>')
-        platform = profile['presences'][0].get('platform', '<unknown>')
-
-        msg = '[{platform}] {friend} is {status}, playing {game}'.format(
-            platform=platform,
-            friend=friend,
-            status=status,
-            game=game,
-        )
+        msg = format_friend_status_message(profile)
         print(msg)
         if SLACK_WEBHOOK_URL and should_notify_user(profile):
             slack_msg += msg + '\n'
