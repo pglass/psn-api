@@ -12,6 +12,7 @@
 - name: Fetch the git repo
   git:
     clone: yes
+    force: yes
     repo: "{{ git_repo_url }}"
     dest: "{{ git_dest_dir }}"
     version: "{{ git_version }}"
