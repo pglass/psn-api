@@ -9,6 +9,7 @@ import requests
 
 from psn.auth import Auth
 from psn.api import PSN
+from psn.cache import BaseCache, LocalCache
 
 SLACK_WEBHOOK_URL = os.environ.get('SLACK_WEBHOOK_URL')
 NOTIFY_USERS = os.environ.get('NOTIFY_USERS')
@@ -27,8 +28,7 @@ def should_notify_user(profile):
     if not NOTIFY_USERS:
         return True
     user = profile['onlineId']
-    game = profile['presences'][0].get('titleName')
-    return game and user in NOTIFY_USERS
+    return user in NOTIFY_USERS
 
 def send_slack_msg(msg):
     if not SLACK_WEBHOOK_URL or not msg:
@@ -57,18 +57,33 @@ def format_friend_status_message(profile):
     )
 
 
-def do_check(psn):
-    online_friends = psn.my_friends(filter='online')['profiles']
+def do_check(psn, cache=BaseCache()):
+    friends = psn.my_friends()['profiles']
 
     print(current_time())
-    print('%s friends online' % len(online_friends))
 
     slack_msg = ''
-    for profile in online_friends:
+    for profile in friends:
+        last_game = cache.get(profile['onlineId'])
         msg = format_friend_status_message(profile)
-        print(msg)
-        if SLACK_WEBHOOK_URL and should_notify_user(profile):
-            slack_msg += msg + '\n'
+
+        if profile['primaryOnlineStatus'] == 'online':
+            # if the user is online, notify us if they were previously offline
+            # (cache returns None) or if the game changed
+            game = profile['presences'][0].get('titleName', '<nothing>')
+
+            print(msg)
+            if game != last_game and should_notify_user(profile) \
+                    and SLACK_WEBHOOK_URL:
+                slack_msg += msg + '\n'
+
+            cache.put(profile['onlineId'], game)
+        else:
+            # if the user is offline, notify if last known status was online
+            if last_game and SLACK_WEBHOOK_URL:
+                slack_msg += msg + '\n'
+
+            cache.rm(profile['onlineId'])
 
     send_slack_msg(slack_msg)
 
@@ -85,6 +100,8 @@ def loop(psn):
     print msg
     send_slack_msg(msg)
 
+    cache = LocalCache()
+
     next_token_refresh = time.time() + TOKEN_REFRESH_INTERVAL
     next_wake_up = -1
     while True:
@@ -93,7 +110,7 @@ def loop(psn):
             next_token_refresh = time.time() + TOKEN_REFRESH_INTERVAL
 
         if time.time() >= next_wake_up:
-            do_check(psn)
+            do_check(psn, cache)
             next_wake_up = time.time() + PSN_CHECK_INTERVAL
 
         time.sleep(WAKEUP_INTERVAL)

@@ -1,5 +1,3 @@
-import os
-
 SSO_URL = 'https://auth.api.sonyentertainmentnetwork.com/2.0/ssocookie'
 CODE_URL = 'https://auth.api.sonyentertainmentnetwork.com/2.0/oauth/authorize'
 OAUTH_URL = 'https://auth.api.sonyentertainmentnetwork.com/2.0/oauth/token'
@@ -37,4 +35,3 @@ DEFAULT_FRIEND_FIELDS = (
     "primaryOnlineStatus",
     "trophySummary(@default)",
 )
-

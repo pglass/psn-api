@@ -1,2 +1,4 @@
 .venv/
 *.pyc
+.creds.yml
+psn.json
