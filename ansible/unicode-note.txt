@@ -1,0 +1,45 @@
+We run into unicode errors only when running python with systemd. In that
+context, python attempts to encode all unicode strings as ascii, which fails
+whenever we have non-ascii unicode characters (in game titles or whatever).
+
+Why does Python want to encode unicde as utf-8 in my local shell, but as ascii
+when started from a systemd script?
+
+Maybe it was a locale config issue. It looked like maybe systemd ran my python
+script with the C/POSIX locale (which only supports the "portable character
+set" aka ascii[1][2]). And I could reproduce the error in my local shell by
+setting LANG=C or LC_ALL=C. The "working" locale in my local shell seemed to be
+en_US.UTF-8 (which was the system default).
+
+Okay, sure. But setting these locale env variables to UTF-8 in the systemd
+script didn't fix anything. Changing locales didn't seem like the right fix
+anyway. My script should work (or at least, not hard error) regardless of the
+environment's locale settings.
+
+The basic issue was that we had non-ascii characters in unicode strings, so
+obviously we can't use ascii to decode them. Encoding as utf-8 is the obvious
+solution here, since it is ascii-compatible. But how do we do this:
+
+- Add ''.encode('utf-8') calls everywhere? No. Not happening.
+- Call sys.setdefaultencoding()? No. This affects too many things besides just
+printing[3].
+- Wrap sys.stdout with an automatic unicode encoder. This is not terrible... If
+we have an intelligent encoder allows byte strings to pass through and encodes
+unicode strings, that would work.
+- Use PYTHONIOENCODING. This "overrides the encoding used for
+stdin/stdout/stderr"[4]. It lets us select the encoding (utf-8) and the error
+handling strategy.
+
+--- SOLUTION ---
+PYTHONIOENCODING seems to be the best option. It does what we want (the print
+statement will encode unicode strings as utf-8) and also lets us specify
+the error handler to avoid hard-failures as needed.
+
+1: http://pubs.opengroup.org/onlinepubs/009696899/basedefs/xbd_chap06.html
+2: http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap07.html#tag_07_02
+    "...describe the characteristics and behavior of the POSIX locale for
+    data consisting entirely of characters from the portable character set
+    and the control character set. For other characters, the behavior is
+    unspecified."
+3: https://stackoverflow.com/a/11742928
+4: https://docs.python.org/3/using/cmdline.html
